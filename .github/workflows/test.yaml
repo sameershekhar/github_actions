@@ -1,8 +1,19 @@
 name: Test Project
 on:
+  pull_request:
+    types: [opened, reopened]
+  workflow_dispatch:
   push:
     branches:
-      - master
+      - main
+      - dev-*
+      - feature/**
+    paths-ignore:
+      - '.workflow/.github/*'
+      - '**.md'
+      - '**.yml'
+      - '**.yaml'
+  
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -17,20 +28,33 @@ jobs:
         run: npm install
       - name: Run tests
         run: npm test
+  build:
+    needs: test
+    runs-on : ubutnu-latest
+    steps:
+      - name : checkout code
+        uses: actions/checkout@v2
+      - name: install node js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14 
+      - name: install dependencies
+        run: npm install
+      - name: Build Project
+        run : npm run build
+      - name: upload artifacts
+        uses: actions/upload-artifacts@v2
+        with:
+          name: dist-files
+          path: dist/
   deploy:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: checkout code
-        uses: actions/checkout@v2 
-      - name: install node js
-        uses: actions/setup-node@v2
+      - name: Get build artifacts
+        uses: actions/download-artifacts@v2
         with:
-          node-version: 14
-      - name: install dependencies
-        run: npm install
-      - name: Build project
-        run : npm run build
+          name: dist-files
       - name: Deploy project
         run: echo "Deploying project..." # Add your deployment command here
     
